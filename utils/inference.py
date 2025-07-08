@@ -239,9 +239,9 @@ def test_face_gender_detection():
         return None
 
 
-if __name__ == "__main__":
-    # Run test
-    test_results = test_face_gender_detection()
+# if __name__ == "__main__":
+#     # Run test
+#     test_results = test_face_gender_detection()
     
     # Example with custom image path
     # custom_image = "./your_test_image.jpg"

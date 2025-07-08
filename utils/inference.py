@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
@@ -48,9 +48,9 @@ def preprocess_for_gender(face_crop: np.ndarray, img_size: int = 224) -> torch.T
     
     return face_tensor
 
-def detect_and_classify_gender(image_bgr: np.ndarray, retinaface_net, retinaface_cfg, 
-                             gender_model, gender_indices: Tuple[int, int], device: str = 'cuda', 
-                             face_threshold: float = 0.6) -> List[Dict]:
+def detect_and_classify_gender(image_bgr: np.ndarray, retinaface_net: Any, retinaface_cfg: Any, 
+                             gender_model: Any, gender_indices: Tuple[int, int], device: str = 'cuda', 
+                             face_threshold: float = 0.6):
     """
     Complete pipeline: face detection + gender classification
     
@@ -91,8 +91,8 @@ def detect_and_classify_gender(image_bgr: np.ndarray, retinaface_net, retinaface
     filtered_scores = scores[valid_faces]
     
     # Step 4: Extract face crops and preprocess for gender
-    gender_inputs = []
-    valid_face_data = []  # Store box coordinates and scores
+    gender_inputs: List[torch.Tensor] = []
+    valid_face_data: List[Tuple[List[int], float]] = [] 
     
     for box, face_score in zip(filtered_boxes, filtered_scores):
         x1, y1, x2, y2 = box
@@ -119,7 +119,7 @@ def detect_and_classify_gender(image_bgr: np.ndarray, retinaface_net, retinaface
     
     # Step 5: Predict gender for all faces
     if not gender_inputs:
-        return []
+        return [], []
     
     gender_predictions = predict_gender_batch(
         gender_tensors=gender_inputs,
@@ -128,25 +128,7 @@ def detect_and_classify_gender(image_bgr: np.ndarray, retinaface_net, retinaface
         device=device
     )
     
-    # Step 6: Format results in CVAT format
-    results = []
-    for i, ((x1, y1, x2, y2), face_score) in enumerate(valid_face_data):
-        if i < len(gender_predictions):
-            gender_pred = gender_predictions[i]
-            
-            results.append({
-                "type": "rectangle",
-                "label": gender_pred['gender'],
-                "confidence": f"{gender_pred['confidence']:.4f}",
-                "points": [float(x1), float(y1), float(x2), float(y2)],
-                "attributes": {
-                    "gender": gender_pred['gender'],
-                    "gender_confidence": f"{gender_pred['confidence']:.4f}",
-                    "face_confidence": f"{face_score:.4f}"
-                }
-            })
-    
-    return results
+    return valid_face_data, gender_predictions
 
 
 # Test function
@@ -197,7 +179,7 @@ def test_face_gender_detection():
         # Step 3: Run detection and classification
         print("🔍 Running face detection and gender classification...")
         
-        results = detect_and_classify_gender(
+        face_data, gender_predictions = detect_and_classify_gender(
             image_bgr=img_bgr,
             retinaface_net=retinaface_net,
             retinaface_cfg=retinaface_cfg,
@@ -208,6 +190,23 @@ def test_face_gender_detection():
         )
         
         # Step 4: Display results
+        results = []
+        for i, ((x1, y1, x2, y2), face_confidence) in enumerate(face_data):
+            if i < len(gender_predictions):
+                gender_pred = gender_predictions[i]
+                
+                results.append({
+                    "type": "rectangle",
+                    "label": gender_pred['gender'],
+                    "points": [float(x1), float(y1), float(x2), float(y2)],
+                    "attributes": {
+                        "gender": gender_pred['gender'],
+                        "gender_confidence": f"{gender_pred['confidence']:.4f}",
+                        "face_confidence": f"{face_confidence:.4f}"
+                    }
+                })
+        
+        # Step 5: Display results
         print(f"\n🎯 Results: Found {len(results)} faces")
         print("=" * 70)
         
@@ -239,11 +238,11 @@ def test_face_gender_detection():
         return None
 
 
-# if __name__ == "__main__":
-#     # Run test
-#     test_results = test_face_gender_detection()
+if __name__ == "__main__":
+    # Run test
+    test_results = test_face_gender_detection()
     
-    # Example with custom image path
+    # # Example with custom image path
     # custom_image = "./your_test_image.jpg"
     # if os.path.exists(custom_image):
     #     img = cv2.imread(custom_image)

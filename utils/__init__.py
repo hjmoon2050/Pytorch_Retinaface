@@ -1,13 +1,13 @@
-from .face_detect import load_retinaface, detect_faces
-from .gender_predict import load_gender_model, predict_gender_batch
-from .inference import detect_and_classify_gender, preprocess_for_retinaface, preprocess_for_gender
+from .facenet import load_retinaface, detect_faces
+from .AgeGenderRaceNet import load_model, predict_bbox
+from .inference import predict, preprocess_for_retinaface, preprocess_for_bbox
 
 __all__ = [
     'load_retinaface',
     'detect_faces', 
-    'load_gender_model',
-    'predict_gender_batch',
-    'detect_and_classify_gender',
+    'load_model',
+    'predict_bbox',
+    'predict',
     'preprocess_for_retinaface',
-    'preprocess_for_gender'
+    'preprocess_for_bbox'
 ]

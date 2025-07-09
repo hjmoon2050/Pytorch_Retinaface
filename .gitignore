@@ -2,3 +2,8 @@ test.jpg
 *.pyc
 *.pt
 *.pth
+
+./*.jpg
+./*.png
+results/*.jpg
+results/*.png
